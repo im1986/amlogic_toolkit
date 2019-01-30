@@ -1,0 +1,52 @@
+#!/bin/sh
+
+if [ -e bin/simg2img ]
+then
+    if [ $# -eq 1 ]
+    then
+	if [ -e $1 ]
+	then
+            echo "Cleaning up..."
+            sudo umount output/system
+            rm -rf output
+            mkdir -p output/system
+            mkdir -p output/image
+            mkdir -p output/logo
+            mkdir -p output/boot
+            mkdir -p output/data
+
+            echo "Unpacking image $1..."
+            bin/aml_image_v2_packer -d $1 output/image
+       
+            echo "Converting system.PARTITION to system.img..."
+            bin/simg2img output/image/system.PARTITION output/image/system.img
+
+            echo "Mounting system image..."
+            sudo mount -t ext4 -o loop,rw output/image/system.img output/system
+
+            echo "Unpacking logo..."
+            bin/logo_img_packer -d output/image/logo.PARTITION output/logo
+            
+            echo "Unpacking data..."
+            bin/simg2img output/image/data.PARTITION output/image/data.img
+
+            echo "Mounting data image..."
+            sudo mount -t ext4 -o loop,rw output/image/data.img output/data
+ 
+            echo "Unpacking boot..."
+            cp output/image/boot.PARTITION output/boot/boot.img
+            cd output/boot
+            ../../bin/abootimg -x boot.img
+            cd ../..
+            rm -f output/boot/boot.img
+
+            echo "Done"
+        else
+            echo "File not found: $1"
+        fi
+    else
+        echo "Usage: unpack [input image]"
+    fi
+else
+    echo "Please run the build script before using this tool"
+fi

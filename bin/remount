@@ -1,0 +1,11 @@
+#!/bin/sh
+
+echo "Unmounting previous image..."
+sync
+sudo umount output/system
+
+echo "Remounting system image..."
+sudo mount -t ext4 -o loop,rw output/image/system.img output/system
+
+echo "Done"
+
